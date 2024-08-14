@@ -1,0 +1,110 @@
+{
+	"name": "SV-G - Processo Total - Economico_financeiro - Cliente e Conta",
+	"properties": {
+		"activities": [
+			{
+				"name": "FHC - Itera os Notebooks das tabelas",
+				"description": "Itera sobre a variável [lista_notebooks] para executar a ingestão Silver de cada tabela.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "FLT - Filtra Chave Entidade",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('FLT - Filtra Chave Entidade').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 10,
+					"activities": [
+						{
+							"name": "PPL - Ingestao Generica",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "SV-U - Processo Generico - Silver",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_caminho_raiz_notebook": {
+										"value": "@pipeline().parameters.p_caminho_raiz_notebook",
+										"type": "Expression"
+									},
+									"p_caminho_notebook": {
+										"value": "@pipeline().parameters.p_dominio",
+										"type": "Expression"
+									},
+									"p_nome_notebook": {
+										"value": "@json(item().parametro).notebook",
+										"type": "Expression"
+									},
+									"p_dt_ini_execucao": {
+										"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy-MM-dd HH:mm:ss')",
+										"type": "Expression"
+									},
+									"p_chave_entidade": {
+										"value": "@item().chave_entidade",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "FLT - Filtra Chave Entidade",
+				"description": "Utiliza o parâmetro \"p_sv_dominio_tema_entidade\" para decidir quais entidades serão carregadas.",
+				"type": "Filter",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.p_dados_orquestrador",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@if(\n    or(\n        empty(pipeline().parameters.p_sv_dominio_tema_entidade),\n        equals(pipeline().parameters.p_sv_dominio_tema_entidade, '.')\n    ),\n    true,\n    startswith(\n        toLower(trim(item().chave_entidade)), \n        concat(\n            replace(toLower(pipeline().parameters.p_dominio),'/','.'),\n            '.',\n            replace(replace(toLower(pipeline().parameters.p_sv_dominio_tema_entidade),'[','' ),']','')                \n        )\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_caminho_raiz_notebook": {
+				"type": "string",
+				"defaultValue": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/silver/"
+			},
+			"p_dominio": {
+				"type": "string",
+				"defaultValue": "cliente_conta/perfil_financeiro"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			},
+			"p_sv_dominio_tema_entidade": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_data_inicio_carga": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "2.2 Silver/Cliente e Conta/Perfil e Financeiro/0 - Group"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-02-15T14:34:32Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,166 @@
+{
+	"name": "3 - ppl_get_metadata",
+	"properties": {
+		"activities": [
+			{
+				"name": "GTM - Busca arquivos",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_text_dls",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_container": {
+								"value": "@pipeline().parameters.p_container_origem",
+								"type": "Expression"
+							},
+							"p_diretorio": {
+								"value": "@pipeline().parameters.p_diretorio",
+								"type": "Expression"
+							},
+							"p_arquivo": "*.csv",
+							"p_delimitador": {
+								"value": "@pipeline().parameters.p_delimitador",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "GTM - Valida se o arquivo existe",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_text_dls",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_container": {
+								"value": "@pipeline().parameters.p_container_origem",
+								"type": "Expression"
+							},
+							"p_diretorio": {
+								"value": "@pipeline().parameters.p_diretorio",
+								"type": "Expression"
+							},
+							"p_arquivo": "dados_enem_2021_ba.csv",
+							"p_delimitador": {
+								"value": "@pipeline().parameters.p_delimitador",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "SVB - lista de arquivos",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GTM - Busca arquivos",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_lista_arquivos",
+					"value": {
+						"value": "@activity('GTM - Busca arquivos').output.childItems",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - valida existencia",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "GTM - Valida se o arquivo existe",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_arquivo_existe",
+					"value": {
+						"value": "@activity('GTM - Valida se o arquivo existe').output.exists",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_container_origem": {
+				"type": "string",
+				"defaultValue": "transient"
+			},
+			"p_diretorio": {
+				"type": "string",
+				"defaultValue": "enem"
+			},
+			"p_arquivo": {
+				"type": "string"
+			},
+			"p_delimitador": {
+				"type": "string",
+				"defaultValue": ","
+			}
+		},
+		"variables": {
+			"v_lista_arquivos": {
+				"type": "Array"
+			},
+			"v_arquivo_existe": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": []
+	}
+}

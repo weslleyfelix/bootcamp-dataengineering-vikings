@@ -1,0 +1,146 @@
+{
+	"name": "7 - ppl_switch",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Define Tipo Carga",
+				"description": "Define a variável \"v_tipo_carga\" com o valor passado pelo parâmetro \"p_tipo_carga\" ou pelo iteração do arquivo de controle.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_tipo_carga",
+					"value": {
+						"value": "@if(\n    or(\n        empty(pipeline().parameters.p_tipo_carga),\n        equals(pipeline().parameters.p_tipo_carga, '.')\n    ),\n    'I'\n    ,\n    pipeline().parameters.p_tipo_carga\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SWH - Define Data Inicio Carga",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "SVB - Define Tipo Carga",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@if(\n    and(\n        not(empty(pipeline().parameters.p_data_inicio_carga)),\n        not(equals(pipeline().parameters.p_data_inicio_carga, '.'))\n    ),\n    'Parametro',\n    if(\n        equals(variables('v_tipo_carga'), 'F'),\n        'Full',\n        'Incremental'\n    )\n)",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "Parametro",
+							"activities": [
+								{
+									"name": "SVB - Parametro - Define Data Inicio Carga",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "v_data_inicio_carga",
+										"value": {
+											"value": "@pipeline().parameters.p_data_inicio_carga",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "Full",
+							"activities": [
+								{
+									"name": "SVB - Full - Define Data Inicio Carga",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "v_data_inicio_carga",
+										"value": "1900-01-01 00:00:00"
+									}
+								}
+							]
+						},
+						{
+							"value": "Incremental",
+							"activities": [
+								{
+									"name": "SVB - Define Data Inicio Execucao",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "v_data_inicio_carga",
+										"value": {
+											"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy-MM-dd HH:mm:ss')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_tipo_carga": {
+				"type": "string",
+				"defaultValue": "I"
+			},
+			"p_data_inicio_carga": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco_entidade": {
+				"type": "string"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_data_inicio_carga": {
+				"type": "String"
+			},
+			"v_tipo_carga": {
+				"type": "String"
+			},
+			"v_dt_ini_execucao": {
+				"type": "String"
+			},
+			"v_esquema_origem": {
+				"type": "String"
+			},
+			"v_tabela_origem": {
+				"type": "String"
+			},
+			"v_informacoes_arquivo_controle": {
+				"type": "Array"
+			},
+			"v_erro_mensagem": {
+				"type": "String"
+			},
+			"v_erro_target": {
+				"type": "String"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-04-25T20:26:00Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

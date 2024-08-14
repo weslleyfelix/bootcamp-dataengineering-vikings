@@ -1,0 +1,121 @@
+{
+	"name": "2 - ppl_set_variables",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Definir data_particao",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_data_particao",
+					"value": {
+						"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_completo",
+				"description": "Atribui um valor à variável [v_diretorio_completo], a partir da concatenação do diretório destino, da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_completo",
+					"value": {
+						"value": "@toLower(\n    concat(\n        variables('v_diretorio_destino'),\n        '/', \n        pipeline().parameters.p_assunto_origem,\n        if(\n            empty(variables('v_data_particao')),\n            '',\n            concat('/', variables('v_data_particao'))\n        )\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir arquivo_destino",
+				"description": "Atribui um valor à variável [v_arquivo_destino], a partir da concatenação da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_arquivo_destino",
+					"value": {
+						"value": "@toLower(\n    concat(\n        pipeline().parameters.p_assunto_origem,\n        '__', \n        if(\n            empty(variables('v_data_particao')),\n            formatDateTime(utcNow(), 'yyyyMMdd'),\n            replace(variables('v_data_particao'), '/', '')\n        )\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_destino",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_destino",
+					"value": {
+						"value": "@toLower(\n    concat(\n        'TeXt',\n        '/',\n        'ENEM'\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"concurrency": 30,
+		"parameters": {
+			"p_container_destino": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"p_diretorio_destino": {
+				"type": "string",
+				"defaultValue": "text/enem"
+			},
+			"p_assunto_origem": {
+				"type": "string",
+				"defaultValue": "prova_enem"
+			}
+		},
+		"variables": {
+			"v_data_particao": {
+				"type": "String"
+			},
+			"v_diretorio_destino": {
+				"type": "String"
+			},
+			"v_arquivo_destino": {
+				"type": "String"
+			},
+			"v_rascunho_nome_tabela_delta": {
+				"type": "String"
+			},
+			"v_diretorio_completo": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-11T11:13:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

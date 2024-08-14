@@ -1,0 +1,101 @@
+{
+	"name": "SV-G - Processo Completo - Cliente e Conta",
+	"properties": {
+		"activities": [
+			{
+				"name": "IFC - Perfil e Financeiro",
+				"description": "Se o parametro p_sv_tema conter a string \"perfil_financeiro\". Então True.",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_sv_dominio_tema),\n        equals(pipeline().parameters.p_sv_dominio_tema,'.')\n     ),\n    contains(\n        toLower(pipeline().parameters.p_sv_dominio_tema),\n        '[perfil_financeiro]'\n      )\n)\n",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Perfil_financeiro",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra Perfil e Financeiro",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "SV-G - Processo Total - Economico_financeiro - Cliente e Conta",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_caminho_raiz_notebook": {
+										"value": "@pipeline().parameters.p_caminho_raiz_notebook",
+										"type": "Expression"
+									},
+									"p_dominio": {
+										"value": "@concat(    \n    pipeline().parameters.p_dominio,     \n    '/perfil_financeiro'\n)",
+										"type": "Expression"
+									},
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra Perfil e Financeiro').output.value",
+										"type": "Expression"
+									},
+									"p_sv_dominio_tema_entidade": {
+										"value": "@pipeline().parameters.p_sv_dominio_tema_entidade",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "FLT - Filtra Perfil e Financeiro",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@pipeline().parameters.p_dados_orquestrador",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@startswith(trim(item().chave_entidade), \n    concat(pipeline().parameters.p_dominio,\n'.perfil_financeiro')\n)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_caminho_raiz_notebook": {
+				"type": "string",
+				"defaultValue": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/silver"
+			},
+			"p_dominio": {
+				"type": "string",
+				"defaultValue": "cliente_conta"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			},
+			"p_sv_dominio_tema": {
+				"type": "string"
+			},
+			"p_sv_dominio_tema_entidade": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "2.2 Silver/Cliente e Conta/0 - Group"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-02-17T02:41:01Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,74 @@
+{
+  "nomeComunidade": "Data Viking",
+  "curso": "Bootcamp Data Engineering",
+  "anoDeInicio": 2023,
+  "emAtividade": true,
+  "instrutores": [
+    {
+      "nome": "Lucas",
+      "idade": 29,
+      "profissao": "Data Scientist",
+      "conhecimento": [
+        "python",
+        "analytics",
+        "pandas",
+        "polars",
+        "mlops"
+      ],
+      "infoAdicional": [
+        {
+          "key":"Estado",
+          "value":"BA"
+        },
+        {
+          "key":"Documentos",
+          "value":"RG:4649849479"
+        }
+      ]
+    },
+    {
+      "nome": "Odemir",
+      "idade": 25,
+      "profissao": "Data Scientist",
+      "conhecimento": [
+        "python",
+        "analytics",
+        "pandas",
+        "polars",
+        "data governace"
+      ],
+      "infoAdicional": [
+        {
+          "key":"Estado",
+          "value":"SP"
+        },
+        {
+          "key":"Documentos",
+          "value":"RG:4649849479#@#CPF:58994919829994"
+        }
+      ]
+    },
+    {
+      "nome": "Weslley",
+      "idade": 30,
+      "profissao": "Data Engineering",
+      "conhecimento": [
+        "python",
+        "analytics",
+        "spark",
+        "airflow",
+        "dataops"
+      ],
+      "infoAdicional": [
+        {
+          "key":"Estado",
+          "value":"SP"
+        },
+        {
+          "key":"Documentos",
+          "value":"RG:4649849479#@#CPF:58994919829994#@#CNH:465799946164"
+        }
+      ]
+    }
+  ]
+}

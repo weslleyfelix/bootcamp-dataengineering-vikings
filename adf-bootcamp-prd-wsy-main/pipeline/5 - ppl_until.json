@@ -1,0 +1,152 @@
+{
+	"name": "5 - ppl_until",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Definir num_dias_processamento",
+				"description": "Se o parâmetro [p_data_inicio_carga] estiver preenchido, contabiliza o número de dias entre a data informada e a data em D-2  atribuindo o seu valor à [v_num_dias_processamento], senão, contabiliza a quantidade de dias entre d-90 e d-2.\nObs.: Sempre em d-2 que é o período mais recente de disponibilização do Google Big Query.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_num_dias_processamento",
+					"value": {
+						"value": "@string(\n    div(\n        div(\n            div(\n                div(\n                    sub(\n                        ticks(\n                            formatDateTime(utcNow(), 'yyyy/MM/dd HH:mm:ss')\n                        ),\n                        ticks(\n                            if(\n                                empty(pipeline().parameters.p_data_inicio_carga), \n                                formatDateTime(addDays(utcNow(),-90), 'yyyy/MM/dd HH:mm:ss'),\n                                formatDateTime(pipeline().parameters.p_data_inicio_carga, 'yyyy/MM/dd HH:mm:ss') \n                            )   \n                        )\n                    ),\n                    10000000\n                ),\n                60\n            ),\n            60\n        ),\n        24\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "UTL - while",
+				"description": "Itera o número de vezes definido pelo \"SVB -  Definir num_dias_processamento\"",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir num_dias_processamento",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greaterOrEquals(\n    int(variables('v_contador')),\n    int(variables('v_num_dias_processamento')) \n)\n",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "SVB - v_contador_temp",
+							"description": "Começa sempre em D-3 pois é a data com mais chances do Google disponibilizar os dados.",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_contador_temporario",
+								"value": {
+									"value": "@string(\n    add(\n        int(variables('v_contador')), \n        1\n    )\n)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Wait - 1 Segundo",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "SVB - v_contador",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						},
+						{
+							"name": "SVB - v_contador",
+							"description": "",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "SVB - v_contador_temp",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_contador",
+								"value": {
+									"value": "@variables('v_contador_temporario')",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "Sucesso na Carga Full",
+				"type": "Wait",
+				"dependsOn": [
+					{
+						"activity": "UTL - while",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 3
+				}
+			},
+			{
+				"name": "Falha na Carga Full",
+				"type": "Wait",
+				"dependsOn": [
+					{
+						"activity": "UTL - while",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 3
+				}
+			}
+		],
+		"parameters": {
+			"p_data_inicio_carga": {
+				"type": "string",
+				"defaultValue": "2023/04/30"
+			}
+		},
+		"variables": {
+			"v_num_dias_processamento": {
+				"type": "String"
+			},
+			"v_contador": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"v_contador_temporario": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-11T18:10:53Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

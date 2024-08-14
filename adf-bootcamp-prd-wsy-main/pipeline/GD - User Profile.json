@@ -1,0 +1,44 @@
+{
+	"name": "GD - User Profile",
+	"properties": {
+		"activities": [
+			{
+				"name": "PPL - Dim",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "GD - Dim - User Profile",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "PPL - Fat",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "PPL - Dim",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "GD - Fat - User Profile",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "2.1 Gold/User Profile"
+		},
+		"annotations": []
+	}
+}

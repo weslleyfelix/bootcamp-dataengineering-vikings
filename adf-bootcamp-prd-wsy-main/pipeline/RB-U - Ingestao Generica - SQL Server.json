@@ -1,0 +1,403 @@
+{
+	"name": "RB-U - Ingestao Generica - SQL Server",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Define data_particao",
+				"description": "Atribui um valor à variável [v_data_particao]. Se o parâmetro [p_data_particao] estiver preenchido, atribui o seu valor à [v_data_particao], senão, atribui a data atual na formatação definida pelo parâmetro [p_formato_data_particao], ou deixa em branco.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_data_particao",
+					"value": {
+						"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd')\n           ",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Define diretorio_completo",
+				"description": "Atribui um valor à variável [v_diretorio_completo], a partir da concatenação do diretório destino, da tabela de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Define diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Define data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_completo",
+					"value": {
+						"value": "@toLower(concat(\n    variables('v_diretorio_destino'),\n    '/', \n    pipeline().parameters.p_tabela_origem,\n    if(\n        empty(variables('v_data_particao')),\n        '',\n        concat('/', variables('v_data_particao'))\n    )\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Define arquivo_destino",
+				"description": "Atribui um valor à variável [v_arquivo_destino], a partir da concatenação da tabela de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Define data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_arquivo_destino",
+					"value": {
+						"value": "@toLower(concat(\n    pipeline().parameters.p_tabela_origem,\n    '__', \n    if(\n        empty(variables('v_data_particao')),\n        formatDateTime(utcNow(), 'yyyyMMdd'),\n        replace(variables('v_data_particao'), '/', '')\n    )\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Define diretorio_destino",
+				"description": "Atribui um valor à variável [v_diretorio_destino]. Se o parâmetro [p_diretorio_destino] estiver preenchido, atribui o valor dele, senão, atribui um valor default. E concatena com o esquema de origem.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_destino",
+					"value": {
+						"value": "@toLower(concat(\n    if(\n        empty(pipeline().parameters.p_diretorio_destino),\n        'sqlserver/core_financeiro',\n        pipeline().parameters.p_diretorio_destino\n    ),\n    '/',\n    pipeline().parameters.p_esquema_origem\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Define rascunho_nome_tabela_delta",
+				"description": "Atribui um valor à variável [v_rascunho_nome_tabela_delta], a partir da concatenação do diretório de destino e da coleção de origem.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Define diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_rascunho_nome_tabela_delta",
+					"value": {
+						"value": "@toLower(concat(\n    variables('v_diretorio_destino'),\n    '/',\n    pipeline().parameters.p_tabela_origem\n))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Define Select de Origem Base",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_select_origem",
+					"value": {
+						"value": "@if(\n    empty(pipeline().parameters.p_select_origem), \n    concat(\n        'SELECT * FROM ', \n        pipeline().parameters.p_esquema_origem, '.',\n        pipeline().parameters.p_tabela_origem, ' WHERE 1=1 '\n    ),\n    pipeline().parameters.p_select_origem\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "IFC - Etapa Ingestao Bronze e Dados Raw OK",
+				"description": "Para ser True o parâmetro \"p_etapa_ingestao\" deve conter \"B\" de bronze ou estar vazio ou com \".\". E também o retorno da variável \"v_etapa_bronze\" deve ser True.",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "IFC - Etapa Ingestao RAW",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@and(\n    or(\n        or(\n            empty(pipeline().parameters.p_rb_etapa_ingestao), \n            equals(pipeline().parameters.p_rb_etapa_ingestao,'.')\n        ),\n        contains(pipeline().parameters.p_rb_etapa_ingestao,'B')\n    ),\n    variables('v_etapa_bronze')\n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "NTB - Ingere na Bronze",
+							"description": "Executa um notebook genérico para ingestão de tabela SQL na camada Bronze.",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 10,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@concat(\n    '/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/bronze/',\n    pipeline().parameters.p_diretorio_destino,\n    '/curinga_core'\n)",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"pn_diretorio_raw": {
+										"value": "@variables('v_diretorio_completo')",
+										"type": "Expression"
+									},
+									"pn_rascunho_nome_tabela_delta": {
+										"value": "@variables('v_rascunho_nome_tabela_delta')",
+										"type": "Expression"
+									},
+									"pn_data_particao": {
+										"value": "@variables('v_data_particao')",
+										"type": "Expression"
+									},
+									"pn_arquivo": {
+										"value": "@variables('v_arquivo_destino')",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "ls_adb_bootcamp",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IFC - Etapa Ingestao RAW",
+				"description": "Para ser True o parâmetro \"p_etapa_ingestao\" deve conter \"R\" de bronze ou estar vazio ou com \".\".",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "SVB - Define arquivo_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Define diretorio_completo",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Define rascunho_nome_tabela_delta",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Define Select de Origem Base",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_rb_etapa_ingestao), \n        equals(pipeline().parameters.p_rb_etapa_ingestao,'.')\n    ),\n    contains(pipeline().parameters.p_rb_etapa_ingestao,'R')\n)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "SVB - F - Define Flag Etapa Bronze",
+							"description": "Infere True.",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_etapa_bronze",
+								"value": true
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "CPD - Ingere Tabela na Raw",
+							"description": "Executa a cópia da tabela do SQL Server para a cama Raw do Data Lake.",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "@variables('v_select_origem')",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sql_azure",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_esquema": {
+											"value": "@pipeline().parameters.p_esquema_origem",
+											"type": "Expression"
+										},
+										"p_tabela": {
+											"value": "@pipeline().parameters.p_tabela_origem",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_parquet_dls",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_container": {
+											"value": "@pipeline().parameters.p_container_destino",
+											"type": "Expression"
+										},
+										"p_diretorio": {
+											"value": "@variables('v_diretorio_completo')",
+											"type": "Expression"
+										},
+										"p_arquivo": {
+											"value": "@variables('v_arquivo_destino')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "SVB - T - Define Flag Etapa Bronze",
+							"description": "Se retornar linhas copiadas True, senão False.",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "CPD - Ingere Tabela na Raw",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_etapa_bronze",
+								"value": {
+									"value": "@if(\n    greater(activity('CPD - Ingere Tabela na Raw').output.rowsCopied, 0),\n    true,\n    false\n)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"concurrency": 30,
+		"parameters": {
+			"p_container_destino": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"p_diretorio_destino": {
+				"type": "string",
+				"defaultValue": "sqlserver/core_financeiro"
+			},
+			"p_data_particao": {
+				"type": "string"
+			},
+			"p_esquema_origem": {
+				"type": "string",
+				"defaultValue": "transacao"
+			},
+			"p_tabela_origem": {
+				"type": "string",
+				"defaultValue": "status_conta"
+			},
+			"p_select_origem": {
+				"type": "string",
+				"defaultValue": "select id_status_conta, ds_status_conta from transacao.status_conta"
+			},
+			"p_data_inicio_carga": {
+				"type": "string"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string",
+				"defaultValue": "RB"
+			},
+			"p_dt_inicio_execucao": {
+				"type": "string"
+			},
+			"p_chave_entidade": {
+				"type": "string",
+				"defaultValue": "sql_server.core_financeiro.status_conta"
+			}
+		},
+		"variables": {
+			"v_data_particao": {
+				"type": "String"
+			},
+			"v_diretorio_destino": {
+				"type": "String"
+			},
+			"v_arquivo_destino": {
+				"type": "String"
+			},
+			"v_diretorio_completo": {
+				"type": "String"
+			},
+			"v_rascunho_nome_tabela_delta": {
+				"type": "String"
+			},
+			"v_select_origem": {
+				"type": "String"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/SQL Server/Core Financeiro/1 - Unit"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-11T11:13:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

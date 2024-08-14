@@ -1,0 +1,130 @@
+{
+	"name": "SV-G - Processo Total - Silver",
+	"properties": {
+		"activities": [
+			{
+				"name": "IFC - Cliente e Conta",
+				"description": "Se o parametro p_sv_dominio conter a string \"cliente_conta\". Então True.",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_sv_dominio),\n        equals(pipeline().parameters.p_sv_dominio,'.')\n     ),\n    contains(\n        toLower(pipeline().parameters.p_sv_dominio),\n        '[cliente_conta]'\n      )\n)\n",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Cliente e Conta",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra Cliente e Conta",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "SV-G - Processo Completo - Cliente e Conta",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_caminho_raiz_notebook": {
+										"value": "@pipeline().parameters.p_caminho_raiz_notebook",
+										"type": "Expression"
+									},
+									"p_dominio": "cliente_conta",
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra Cliente e Conta').output.value",
+										"type": "Expression"
+									},
+									"p_sv_dominio_tema": {
+										"value": "@pipeline().parameters.p_sv_dominio_tema",
+										"type": "Expression"
+									},
+									"p_sv_dominio_tema_entidade": {
+										"value": "@pipeline().parameters.p_sv_dominio_tema_entidade",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "FLT - Filtra Cliente e Conta",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@pipeline().parameters.p_dados_orquestrador",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@startswith(trim(item().chave_entidade), 'cliente_conta')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IFC - Customer Sucess",
+				"description": "Se o parametro p_sv_dominio conter a string \"customer_sucess\". Então True.",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_sv_dominio),\n        equals(pipeline().parameters.p_sv_dominio,'.')\n     ),\n    contains(\n        toLower(pipeline().parameters.p_sv_dominio),\n        '[customer_sucess]'\n      )\n)\n",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Sustomer Sucess",
+							"description": "Chama o processo antigo do dominio customer_sucess",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "SV - User App - Web Application - Customer Success",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_caminho_raiz_notebook": {
+				"type": "string",
+				"defaultValue": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/silver"
+			},
+			"p_sv_dominio": {
+				"type": "string"
+			},
+			"p_sv_dominio_tema": {
+				"type": "string"
+			},
+			"p_sv_dominio_tema_entidade": {
+				"type": "string"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			}
+		},
+		"folder": {
+			"name": "2.2 Silver/0 - Group"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-13T20:18:01Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

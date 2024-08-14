@@ -1,0 +1,107 @@
+{
+	"name": "RB-G - Orquestra Ingestao - SqlServer",
+	"properties": {
+		"activities": [
+			{
+				"name": "IFC - Ingere Core Financeiro",
+				"description": "Se o parâmetro \"p_rb_sistema_banco\" conter a string \"core_financeiro\" então True.",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@contains(\n        toLower(pipeline().parameters.p_rb_sistema_banco),\n        '[sql_server.core_financeiro]'\n    )",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Executa Core",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra Core",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "RB-G - Processo Generico - Raw e Bronze",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_data_inicio_carga": {
+										"value": "@pipeline().parameters.p_data_inicio_carga",
+										"type": "Expression"
+									},
+									"p_rb_sistema_banco_entidade": {
+										"value": "@pipeline().parameters.p_rb_sistema_banco_entidade",
+										"type": "Expression"
+									},
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra Core').output.value",
+										"type": "Expression"
+									},
+									"p_rb_etapa_ingestao": {
+										"value": "@pipeline().parameters.p_rb_etapa_ingestao",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "FLT - Filtra Core",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@pipeline().parameters.p_dados_orquestrador",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@startswith(item().chave_entidade, 'sql_server.core_financeiro')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_data_inicio_carga": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco_entidade": {
+				"type": "string"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			},
+			"v_parametro_tabela_controle": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/SQL Server/0 - Group"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-04-05T20:19:30Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

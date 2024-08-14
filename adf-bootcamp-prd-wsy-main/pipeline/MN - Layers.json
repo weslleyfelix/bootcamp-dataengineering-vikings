@@ -1,0 +1,67 @@
+{
+	"name": "MN - Layers",
+	"properties": {
+		"activities": [
+			{
+				"name": "PPL - Raw Bronze",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "RB - Ingestao Generica - Dummy JS - Web API",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_container_destino": "raw"
+					}
+				}
+			},
+			{
+				"name": "PPL - Silver",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "PPL - Raw Bronze",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "SV - User App - Web Application - Customer Success",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "PPL - Gold",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "PPL - Silver",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "GD - User Profile",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "0 - Main"
+		},
+		"annotations": []
+	}
+}

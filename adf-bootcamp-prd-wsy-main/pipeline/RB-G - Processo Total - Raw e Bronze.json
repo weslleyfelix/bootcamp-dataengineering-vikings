@@ -1,0 +1,149 @@
+{
+	"name": "RB-G - Processo Total - Raw e Bronze",
+	"properties": {
+		"activities": [
+			{
+				"name": "IFC - Ingere do SQL Server",
+				"description": "Se o parâmetro p_rb_sistema_origem conter a string \"sql_server\" então True.",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_rb_sistema),\n        equals(pipeline().parameters.p_rb_sistema,'.')\n    ),\n    contains(\n        toLower(pipeline().parameters.p_rb_sistema),\n        '[sql_server]'\n    )\n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "FLT - Filtra SQL Server",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@pipeline().parameters.p_dados_orquestrador",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@startswith(item().chave_entidade, 'sql_server')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PPL - SQL Server",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra SQL Server",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "RB-G - Orquestra Ingestao - SqlServer",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_data_inicio_carga": {
+										"value": "@pipeline().parameters.p_data_inicio_carga",
+										"type": "Expression"
+									},
+									"p_rb_sistema_banco": {
+										"value": "@pipeline().parameters.p_rb_sistema_banco",
+										"type": "Expression"
+									},
+									"p_rb_sistema_banco_entidade": {
+										"value": "@pipeline().parameters.p_rb_sistema_banco_entidade",
+										"type": "Expression"
+									},
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra SQL Server').output.value",
+										"type": "Expression"
+									},
+									"p_rb_etapa_ingestao": {
+										"value": "@pipeline().parameters.p_rb_etapa_ingestao",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IFC - Ingere de APIs",
+				"description": "Se o parâmetro p_rb_sistema_origem conter a string \"web_apis\" então True.",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "IFC - Ingere do SQL Server",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_rb_sistema),\n        equals(pipeline().parameters.p_rb_sistema,'.')\n    ),\n    contains(\n        toLower(pipeline().parameters.p_rb_sistema),\n        '[web_apis]'\n    )\n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - APIs",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "RB - Ingestao Generica - Dummy JS - Web API",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_data_inicio_carga": {
+				"type": "string"
+			},
+			"p_rb_sistema": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco_entidade": {
+				"type": "string"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			}
+		},
+		"variables": {
+			"v_sistema_oracle": {
+				"type": "String"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/0 - Group"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-03T20:22:42Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

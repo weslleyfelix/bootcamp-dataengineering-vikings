@@ -1,0 +1,33 @@
+{
+	"name": "ds_deltatable_databricks",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adb_delta_bootcamp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_esquema": {
+				"type": "string"
+			},
+			"p_tabela": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Databricks"
+		},
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLakeDataset",
+		"typeProperties": {
+			"database": {
+				"value": "@dataset().p_esquema",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().p_tabela",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	}
+}

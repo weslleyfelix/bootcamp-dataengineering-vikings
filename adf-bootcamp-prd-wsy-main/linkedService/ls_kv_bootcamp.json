@@ -1,0 +1,12 @@
+{
+	"name": "ls_kv_bootcamp",
+	"properties": {
+		"description": "buscar chaves no key vault (cofre de senhas)",
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-bootcamp-wsy.vault.azure.net/"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

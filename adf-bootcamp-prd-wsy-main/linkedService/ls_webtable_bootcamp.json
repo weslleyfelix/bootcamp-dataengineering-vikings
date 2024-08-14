@@ -1,0 +1,16 @@
+{
+	"name": "ls_webtable_bootcamp",
+	"properties": {
+		"description": "Conexão com um site aberto para coletar valores via web scraping",
+		"annotations": [],
+		"type": "Web",
+		"typeProperties": {
+			"url": "https://www.dieese.org.br/analisecestabasica/salarioMinimo.html",
+			"authenticationType": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntimeSelHosted",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

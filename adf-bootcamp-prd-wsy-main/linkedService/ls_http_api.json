@@ -1,0 +1,13 @@
+{
+	"name": "ls_http_api",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://dummyjson.com/users",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		},
+		"description": "Conexão com a API do site dummy json"
+	}
+}

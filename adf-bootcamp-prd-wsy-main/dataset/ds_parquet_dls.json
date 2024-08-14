@@ -1,0 +1,44 @@
+{
+	"name": "ds_parquet_dls",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_dls_bootcamp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_container": {
+				"type": "string"
+			},
+			"p_diretorio": {
+				"type": "string"
+			},
+			"p_arquivo": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Azure Storage Account"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().p_arquivo",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().p_diretorio",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().p_container",
+					"type": "Expression"
+				}
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}

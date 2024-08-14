@@ -1,0 +1,163 @@
+{
+	"name": "RB-G - Processo Generico - Raw e Bronze",
+	"properties": {
+		"activities": [
+			{
+				"name": "FCH - Itera sobre a Ingestao de Tabelas",
+				"description": "Itera sobre o retorno da lookup para executar a ingestão Raw e Bronze de cada tabela.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "FLT - Filtra Chave Entidade",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('FLT - Filtra Chave Entidade').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 30,
+					"activities": [
+						{
+							"name": "PPL - Ingestao - Core - SqlServer",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "SVB - Define data inicio carga",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "RB-U - Ingestao Generica - SQL Server",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_container_destino": {
+										"value": "@json(item().parametro).container_destino",
+										"type": "Expression"
+									},
+									"p_diretorio_destino": {
+										"value": "@json(item().parametro).diretorio_destino",
+										"type": "Expression"
+									},
+									"p_data_particao": {
+										"value": "@formatDateTime(variables('v_data_inicio_carga'), 'yyyy/MM/dd')",
+										"type": "Expression"
+									},
+									"p_esquema_origem": {
+										"value": "@json(item().parametro).esquema_origem",
+										"type": "Expression"
+									},
+									"p_tabela_origem": {
+										"value": "@json(item().parametro).tabela_origem",
+										"type": "Expression"
+									},
+									"p_select_origem": {
+										"value": "@json(item().parametro).select_origem",
+										"type": "Expression"
+									},
+									"p_data_inicio_carga": {
+										"value": "@variables('v_data_inicio_carga')",
+										"type": "Expression"
+									},
+									"p_rb_etapa_ingestao": {
+										"value": "@pipeline().parameters.p_rb_etapa_ingestao",
+										"type": "Expression"
+									},
+									"p_dt_inicio_execucao": {
+										"value": "@variables('v_data_inicio_carga')",
+										"type": "Expression"
+									},
+									"p_chave_entidade": {
+										"value": "@item().chave_entidade",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "SVB - Define data inicio carga",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_data_inicio_carga",
+								"value": {
+									"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "FLT - Filtra Chave Entidade",
+				"description": "Utiliza o parâmetro \"p_rb_sistema_banco_entidade\" para decidir quais entidades serão carregadas.",
+				"type": "Filter",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.p_dados_orquestrador",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@if(\n    or(\n        empty(pipeline().parameters.p_rb_sistema_banco_entidade),\n        equals(pipeline().parameters.p_rb_sistema_banco_entidade, '.')\n    ),\n    true,\n    contains(\n        pipeline().parameters.p_rb_sistema_banco_entidade, \n        concat('[', item().chave_entidade, ']')\n    )\n)\n",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_data_inicio_carga": {
+				"type": "string"
+			},
+			"p_rb_sistema_banco_entidade": {
+				"type": "string"
+			},
+			"p_dados_orquestrador": {
+				"type": "array"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_data_inicio_carga": {
+				"type": "String"
+			},
+			"v_dt_ini_execucao": {
+				"type": "String"
+			},
+			"v_esquema_origem": {
+				"type": "String"
+			},
+			"v_tabela_origem": {
+				"type": "String"
+			},
+			"v_informacoes_arquivo_controle": {
+				"type": "Array"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/1 - General"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-04-25T20:26:00Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

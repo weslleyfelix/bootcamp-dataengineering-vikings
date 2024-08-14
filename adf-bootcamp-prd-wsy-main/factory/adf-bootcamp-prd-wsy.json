@@ -1,0 +1,9 @@
+{
+	"name": "adf-bootcamp-prd-wsy",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "79178542-6b7e-4f14-a956-d9b832a5eea5",
+		"tenantId": "b8f982d3-8e92-426c-b6c4-a6a300175973"
+	}
+}

@@ -1,0 +1,100 @@
+{
+	"name": "0 - ppl_web_scraping",
+	"properties": {
+		"activities": [
+			{
+				"name": "CPD - ingestao Raw",
+				"description": "Activitie para fazer a aquisição dos dados em fontes diversas",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "WebSource"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "Período",
+									"type": "String"
+								},
+								"sink": {
+									"name": "periodo",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "Salário mínimo nominal",
+									"type": "String"
+								},
+								"sink": {
+									"name": "salario_minimo_nominal",
+									"physicalType": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "Salário mínimo necessário",
+									"type": "String"
+								},
+								"sink": {
+									"name": "salario_minimo_necessario",
+									"physicalType": "String"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_webtable_salariominimo",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_text_dls",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_container": "raw",
+							"p_diretorio": "web_scraping/salario_minimo",
+							"p_arquivo": "valores_salario_minimo.csv",
+							"p_delimitador": ";"
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": []
+	}
+}

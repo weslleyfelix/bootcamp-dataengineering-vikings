@@ -1,0 +1,300 @@
+{
+	"name": "RB - Ingestao Generica - Dummy JS - Web API",
+	"properties": {
+		"activities": [
+			{
+				"name": "SVB - Definir data_particao",
+				"description": "Atribui um valor à variável [v_data_particao]. ",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_data_particao",
+					"value": {
+						"value": "@convertFromUtc(utcnow(), 'E. South America Standard Time', 'yyyy/MM/dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_completo",
+				"description": "Atribui um valor à variável [v_diretorio_completo], a partir da concatenação do diretório destino, da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_completo",
+					"value": {
+						"value": "@toLower(\n    concat(\n        variables('v_diretorio_destino'),\n        '/', \n        pipeline().parameters.p_colecao_origem,\n        if(\n            empty(variables('v_data_particao')),\n            '',\n            concat('/', variables('v_data_particao'))\n        )\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir arquivo_destino",
+				"description": "Atribui um valor à variável [v_arquivo_destino], a partir da concatenação da coleção de origem e da data de partição.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir data_particao",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_arquivo_destino",
+					"value": {
+						"value": "@toLower(\n    concat(\n        pipeline().parameters.p_colecao_origem,\n        '__', \n        if(\n            empty(variables('v_data_particao')),\n            formatDateTime(utcNow(), 'yyyyMMdd'),\n            replace(variables('v_data_particao'), '/', '')\n        )\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir diretorio_destino",
+				"description": "Atribui um valor à variável [v_diretorio_destino]. \nSe o parâmetro [p_diretorio_destino] estiver preenchido, atribui o valor dele, senão, atribui um valor default.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_diretorio_destino",
+					"value": {
+						"value": "@toLower(\n    if(\n        empty(pipeline().parameters.p_diretorio_destino),\n        'web_api/dummy_js',\n        pipeline().parameters.p_diretorio_destino\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "SVB - Definir rascunho_nome_tabela_delta",
+				"description": "Atribui um valor à variável [v_rascunho_nome_tabela_delta], a partir da concatenação do diretório de destino e da coleção de origem.",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir diretorio_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_rascunho_nome_tabela_delta",
+					"value": {
+						"value": "@toLower(\n    concat(\n        variables('v_diretorio_destino'),\n        '/',\n        pipeline().parameters.p_colecao_origem\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "NTB - Ingestao - Bronze",
+				"description": "Executa um notebook genérico para ingestão da coleção na camada Bronze.",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "CPD - Ingestao - Raw",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(\n    '/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/bronze/',\n    variables('v_diretorio_destino'), '/generico_json'\n)",
+						"type": "Expression"
+					},
+					"baseParameters": {
+						"pn_diretorio_raw": {
+							"value": "@variables('v_diretorio_completo')",
+							"type": "Expression"
+						},
+						"pn_data_particao": {
+							"value": "@variables('v_data_particao')",
+							"type": "Expression"
+						},
+						"pn_arquivo": {
+							"value": "@variables('v_arquivo_destino')",
+							"type": "Expression"
+						},
+						"pn_rascunho_nome_tabela_delta": {
+							"value": "@variables('v_rascunho_nome_tabela_delta')",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_adb_bootcamp",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "CPD - Ingestao - Raw",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "SVB - Definir arquivo_destino",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir diretorio_completo",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "SVB - Definir rascunho_nome_tabela_delta",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET"
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"parallelCopies": 2
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_json_http_api_dummy",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_json_dls",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_container": {
+								"value": "@pipeline().parameters.p_container_destino",
+								"type": "Expression"
+							},
+							"p_diretorio": {
+								"value": "@variables('v_diretorio_completo')",
+								"type": "Expression"
+							},
+							"p_arquivo": {
+								"value": "@variables('v_arquivo_destino')",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"concurrency": 30,
+		"parameters": {
+			"p_container_destino": {
+				"type": "string",
+				"defaultValue": "raw"
+			},
+			"p_diretorio_destino": {
+				"type": "string",
+				"defaultValue": "web_api/dummy_js"
+			},
+			"p_data_particao": {
+				"type": "string"
+			},
+			"p_colecao_origem": {
+				"type": "string",
+				"defaultValue": "users"
+			},
+			"p_formato_data_particao": {
+				"type": "string",
+				"defaultValue": "D"
+			},
+			"p_tipo_carga": {
+				"type": "string",
+				"defaultValue": "I"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string"
+			},
+			"p_data_inicio_carga": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_data_particao": {
+				"type": "String"
+			},
+			"v_diretorio_destino": {
+				"type": "String"
+			},
+			"v_arquivo_destino": {
+				"type": "String"
+			},
+			"v_diretorio_completo": {
+				"type": "String"
+			},
+			"v_rascunho_nome_tabela_delta": {
+				"type": "String"
+			},
+			"v_filtro_origem": {
+				"type": "String"
+			},
+			"v_selecao_coluna": {
+				"type": "String"
+			},
+			"v_etapa_bronze": {
+				"type": "Boolean"
+			}
+		},
+		"folder": {
+			"name": "2.3 Raw e Bronze/Web API/Dummy JS"
+		},
+		"annotations": [
+			"@pipeline().parameters.p_colecao_origem"
+		],
+		"lastPublishTime": "2022-05-11T11:13:04Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

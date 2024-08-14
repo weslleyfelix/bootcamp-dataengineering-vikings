@@ -1,0 +1,68 @@
+{
+	"name": "SV-U - Processo Generico - Silver",
+	"properties": {
+		"activities": [
+			{
+				"name": "NTB - Generico - Silver",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": {
+						"value": "@concat(\n    if(\n        endswith(\n            trim(pipeline().parameters.p_caminho_raiz_notebook),\n            '/'\n        ),\n        trim(pipeline().parameters.p_caminho_raiz_notebook),\n        concat(trim(pipeline().parameters.p_caminho_raiz_notebook),'/')\n    ),\n    if(\n        startswith(\n            trim(pipeline().parameters.p_caminho_notebook),\n            '/'\n        ),\n        substring(\n            trim(pipeline().parameters.p_caminho_notebook),\n            1,\n            sub(length(pipeline().parameters.p_caminho_notebook),1)\n        ),\n        trim(pipeline().parameters.p_caminho_notebook)\n    ),\n    if(\n        endswith(\n            trim(pipeline().parameters.p_caminho_notebook), \n            '/'\n        ),\n        if(\n            startswith(\n                trim(pipeline().parameters.p_nome_notebook), \n                '/'\n            ),\n            substring(\n                trim(pipeline().parameters.p_nome_notebook),\n                1,\n                sub(length(pipeline().parameters.p_nome_notebook),1)\n            ),\n            trim(pipeline().parameters.p_nome_notebook)\n        ), \n        if(\n            startswith(\n                trim(pipeline().parameters.p_nome_notebook), \n                '/'\n            ),\n            trim(pipeline().parameters.p_nome_notebook),\n            concat('/', trim(pipeline().parameters.p_nome_notebook))\n        )\n    )\n)",
+						"type": "Expression"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_adb_bootcamp",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"p_caminho_raiz_notebook": {
+				"type": "string",
+				"defaultValue": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/delta/silver"
+			},
+			"p_caminho_notebook": {
+				"type": "string"
+			},
+			"p_nome_notebook": {
+				"type": "string"
+			},
+			"p_dt_ini_execucao": {
+				"type": "string"
+			},
+			"p_chave_entidade": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"v_erro_mensagem": {
+				"type": "String"
+			},
+			"v_erro_target": {
+				"type": "String"
+			},
+			"v_data_inicio_carga": {
+				"type": "String"
+			},
+			"v_teste": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "2.2 Silver/1 - General"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-05-13T20:17:59Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

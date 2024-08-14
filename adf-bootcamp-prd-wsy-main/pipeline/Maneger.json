@@ -1,0 +1,291 @@
+{
+	"name": "Maneger",
+	"properties": {
+		"activities": [
+			{
+				"name": "IFC - Raw e Bronze",
+				"description": "Se Informado Executa Pipeline Raw e Bronze",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "FLT - Filtra Itens Ativos",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_etapa_pipeline),\n        equals(pipeline().parameters.p_etapa_pipeline,'.')\n    ),\n    contains(pipeline().parameters.p_etapa_pipeline, 'RB')    \n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Executa Raw e Bronze",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra Raw e Bronze",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "RB-G - Processo Total - Raw e Bronze",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_data_inicio_carga": {
+										"value": "@pipeline().parameters.p_data_inicio_carga",
+										"type": "Expression"
+									},
+									"p_rb_sistema": {
+										"value": "@pipeline().parameters.p_rb_sistema",
+										"type": "Expression"
+									},
+									"p_rb_sistema_banco": {
+										"value": "@pipeline().parameters.p_rb_sistema_banco",
+										"type": "Expression"
+									},
+									"p_rb_sistema_banco_entidade": {
+										"value": "@pipeline().parameters.p_rb_sistema_banco_entidade",
+										"type": "Expression"
+									},
+									"p_rb_etapa_ingestao": {
+										"value": "@pipeline().parameters.p_rb_etapa_ingestao",
+										"type": "Expression"
+									},
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra Raw e Bronze').output.value",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "FLT - Filtra Raw e Bronze",
+							"description": "Só deixa passar quando a etapa for \"RB\".",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('FLT - Filtra Itens Ativos').output.value",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@equals(item().etapa, 'RB')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "IFC - Silver",
+				"description": "Se Informado Executa Pipeline Silver",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "IFC - Raw e Bronze",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@or(\n    or(\n        empty(pipeline().parameters.p_etapa_pipeline),\n        equals(pipeline().parameters.p_etapa_pipeline,'.')\n    ),\n    contains(pipeline().parameters.p_etapa_pipeline, 'SV')\n)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "PPL - Executa Silver",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "FLT - Filtra Silver",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "SV-G - Processo Total - Silver",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_sv_dominio": {
+										"value": "@pipeline().parameters.p_sv_dominio",
+										"type": "Expression"
+									},
+									"p_sv_dominio_tema": {
+										"value": "@pipeline().parameters.p_sv_dominio_tema",
+										"type": "Expression"
+									},
+									"p_sv_dominio_tema_entidade": {
+										"value": "@pipeline().parameters.p_sv_dominio_tema_entidade",
+										"type": "Expression"
+									},
+									"p_dados_orquestrador": {
+										"value": "@activity('FLT - Filtra Silver').output.value",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "FLT - Filtra Silver",
+							"description": "Só deixa passar quando a etapa for \"RB\".",
+							"type": "Filter",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('FLT - Filtra Itens Ativos').output.value",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@equals(item().etapa, 'SV')",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "LKP - Colete Dados Arquivo Orquestrador",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "NTB - Inicia Cluster",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureDatabricksDeltaLakeSource"
+					},
+					"dataset": {
+						"referenceName": "ds_deltatable_databricks",
+						"type": "DatasetReference",
+						"parameters": {
+							"p_esquema": "gerencia",
+							"p_tabela": "pipeline_orquestrador"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FLT - Filtra Itens Ativos",
+				"description": "Só deixa passar quando o \"flg_ativo\" for True.",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "LKP - Colete Dados Arquivo Orquestrador",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LKP - Colete Dados Arquivo Orquestrador').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().flg_ativo, 'True')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "NTB - Inicia Cluster",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/notebooks/utility/start_cluster"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_adb_bootcamp",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"p_data_inicio_carga": {
+				"type": "string",
+				"defaultValue": "."
+			},
+			"p_etapa_pipeline": {
+				"type": "string",
+				"defaultValue": "RB,SV"
+			},
+			"p_rb_sistema": {
+				"type": "string",
+				"defaultValue": "[sql_server]"
+			},
+			"p_rb_sistema_banco": {
+				"type": "string",
+				"defaultValue": "[sql_server.core_financeiro]"
+			},
+			"p_rb_sistema_banco_entidade": {
+				"type": "string",
+				"defaultValue": "[sql_server.core_financeiro.status_conta]"
+			},
+			"p_rb_etapa_ingestao": {
+				"type": "string",
+				"defaultValue": "RB"
+			},
+			"p_sv_dominio": {
+				"type": "string",
+				"defaultValue": "[cliente_conta],[customer_sucess]"
+			},
+			"p_sv_dominio_tema": {
+				"type": "string",
+				"defaultValue": "[perfil_financeiro]"
+			},
+			"p_sv_dominio_tema_entidade": {
+				"type": "string",
+				"defaultValue": "[perfil_cliente]"
+			}
+		},
+		"folder": {
+			"name": "1.1 Main"
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-04-08T13:17:05Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

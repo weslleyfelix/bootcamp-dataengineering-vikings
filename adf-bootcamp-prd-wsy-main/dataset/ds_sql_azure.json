@@ -1,0 +1,33 @@
+{
+	"name": "ds_sql_azure",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_azureSql_bootcamp",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_esquema": {
+				"type": "string"
+			},
+			"p_tabela": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Azure SQL Database/Core Financeiro"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().p_esquema",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().p_tabela",
+				"type": "Expression"
+			}
+		}
+	}
+}

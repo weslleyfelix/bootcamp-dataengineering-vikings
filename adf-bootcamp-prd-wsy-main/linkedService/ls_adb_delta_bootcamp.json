@@ -1,0 +1,20 @@
+{
+	"name": "ls_adb_delta_bootcamp",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLake",
+		"typeProperties": {
+			"domain": "https://adb-8968751208728840.0.azuredatabricks.net",
+			"clusterId": "0502-225147-tjko9ehx",
+			"accessToken": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_kv_bootcamp",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "secret-adb-bootcamp"
+			}
+		},
+		"description": "Estabelece a conexão com as tabelas deltas do databricks"
+	}
+}

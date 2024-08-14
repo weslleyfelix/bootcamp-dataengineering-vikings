@@ -1,0 +1,42 @@
+{
+	"name": "9 - ppl_databricks",
+	"properties": {
+		"activities": [
+			{
+				"name": "Notebook1",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Repos/weslley_estudos@outlook.com/adb-bootcamp-prd-wsy/test/teste_adf",
+					"baseParameters": {
+						"nome": {
+							"value": "@pipeline().parameters.p_nome",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_adb_bootcamp",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"p_nome": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "study activities"
+		},
+		"annotations": []
+	}
+}
